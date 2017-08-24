@@ -1,7 +1,8 @@
-<link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="classlist-shim.html">
+<link rel="import" href="../polymer/lib/utils/async.html">
+<!-- <link rel="import" href="../neon-animation/web-animations.html"> -->
 
 <!--
 @element paper-clock-selector
@@ -142,7 +143,8 @@
         return from + offset + (to - angle);
       }
 
-      class PaperClockSelector extends Polymer.Element {
+      class PaperClockSelector extends Polymer.mixinBehaviors(
+        [Polymer.IronResizableBehavior], Polymer.Element) {
         static get is() { return 'paper-clock-selector'; }
         static get properties() {
           return {
@@ -172,19 +174,33 @@
             animated: {
               type: Boolean,
               value: false
+            },
+            _instanceId: {
+              type: Number
+            },
+            _selectorSize: {
+              type: Number
+            },
+            _handX: {
+              type: Number
+            },
+            _handY: {
+              type: Number
+            },
+            _radius: {
+              type: Number
+            },
+            _selectorDotSize: {
+              type: Number
+            },
+            _selectorInner: {
+              type: Number
+            },
+            _selectorOuter: {
+              type: Number
             }
           }
         }
-        // listeners: {
-        //   'iron-resize': '_updateSize'
-        // },
-        // observers: [
-        //   '_populate(count, step, useZero, _instanceId)',
-        //   '_zeroPadChanged(zeroPad, _numbers)'
-        // ],
-        // behaviors: [
-        //   Polymer.IronResizableBehavior
-        // ],
 
         static get observers() {
           return [
@@ -198,7 +214,7 @@
           this._populate();
           this._selectedChanged(this.selected);
           this._instanceId = instanceCount++;
-          this.addEventListener('iron-resize', this._updateSize.bind(this));
+          this.addEventListener('iron-resize', () => { this._updateSize() });
         }
         setClockHand(deg, animate, callback) {
           deg = normalizeAngle(deg);
@@ -220,7 +236,7 @@
             }.bind(this));
           }
 
-          this.async(function () {
+          window.requestAnimationFrame(() => {
             this._setHandRotation(rotate, animate);
           });
         }
@@ -287,7 +303,7 @@
             this.selected = value;
             return;
           }
-          this._vibrate();
+          // this._vibrate();
           this.setClockHand((360 / this.count) * this.selected);
         }
         _stepChanged(value, oldValue) {
@@ -400,7 +416,7 @@
           this.$.clock.style.height = (radius * 2) + 'px';
           this._updateHandPositions();
 
-          this.async(function () {
+          Polymer.Async.microTask.run(function () {
             // FIXME: this is hacky, but for some reason we need to wait a bit
             // to get an accurate measurement
             this._bounds = this.$.face.getBoundingClientRect();
@@ -478,7 +494,7 @@
 
           /* only fire selected when we've tapped or stopped tracking */
           if (event.type === 'tap' || event.detail.state === 'end') {
-            this.fire('paper-clock-selected', { value: this.selected, animated: this.animated });
+            this.dispatchEvent(new CustomEvent('paper-clock-selected', { detail: { value: this.selected, animated: this.animated } }));
           }
         }
         _formatNumber(value) {

@@ -1,4 +1,3 @@
-<link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="../iron-media-query/iron-media-query.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
@@ -12,6 +11,8 @@
 <link rel="import" href="paper-clock-selector.html">
 <link rel="import" href="paper-time-picker-dialog-style.html">
 <link rel="import" href="../polymer/lib/elements/dom-if.html">
+<link rel="import" href="../polymer/lib/utils/async.html">
+<!-- <link rel="import" href="../neon-animation/web-animations.html"> -->
 
 <!--
 
@@ -220,14 +221,16 @@ If you include this element as part of `paper-dialog`, use the class
           <neon-animated-pages id="pages" class="clock-animatable" attr-for-selected="name" selected="{{view}}" entry-animation="fade-in-animation"
             exit-animation="fade-out-animation">
             <neon-animatable class="clock-animatable" name="hours">
-              <paper-clock-selector class="clock" id="hourClock" count="12" step="1" animated="[[animated]]" selected="{{hour12}}"></paper-clock-selector>
+              <paper-clock-selector class="clock" id="hourClock" count="12" step="1" animated="[[animated]]" selected="{{hour12}}" on-paper-clock-selected="_onClockSelected"></paper-clock-selector>
             </neon-animatable>
             <neon-animatable class="clock-animatable" name="minutes">
-              <paper-clock-selector class="clock" id="minuteClock" count="60" step="5" animated="[[animated]]" use-zero zero-pad selected="{{minute}}"></paper-clock-selector>
+              <paper-clock-selector class="clock" id="minuteClock" count="60" step="5" animated="[[animated]]" use-zero zero-pad selected="{{minute}}"
+                on-paper-clock-selected="_onClockSelected"></paper-clock-selector>
             </neon-animatable>
             <template is="dom-if" if="[[ enableSeconds ]]">
               <neon-animatable class="clock-animatable" name="seconds">
-                <paper-clock-selector class="clock" id="secondClock" count="60" step="5" animated="[[animated]]" use-zero zero-pad selected="{{second}}"></paper-clock-selector>
+                <paper-clock-selector class="clock" id="secondClock" count="60" step="5" animated="[[animated]]" use-zero zero-pad selected="{{second}}"
+                  on-paper-clock-selected="_onClockSelected"></paper-clock-selector>
               </neon-animatable>
             </template>
           </neon-animated-pages>
@@ -242,7 +245,8 @@ If you include this element as part of `paper-dialog`, use the class
           console.warn.apply(console, arguments);
         }
       }
-      class PaperTimePicker extends Polymer.Element {
+      class PaperTimePicker extends Polymer.mixinBehaviors(
+        [Polymer.IronResizableBehavior], Polymer.Element) {
         static get is() { return 'paper-time-picker'; }
         static get properties() {
           return {
@@ -359,10 +363,6 @@ If you include this element as part of `paper-dialog`, use the class
               observer: '_computeNarrow'
             }
           }
-          // behaviors: [
-          //   Polymer.IronResizableBehavior
-          // ],
-
         }
         static get observers() {
           return [
@@ -373,8 +373,8 @@ If you include this element as part of `paper-dialog`, use the class
           super.ready();
           this.isTouch = 'ontouchstart' in window;
           this.view = 'hours';
-          this.addEventListener('iron-resize', this._resizeHandler.bind(this));
-          this.addEventListener('paper-clock-selected', this._onClockSelected.bind(this));
+          this.addEventListener('iron-resize', () => { this._resizeHandler() });
+          this.addEventListener('paper-clock-selected', (e) => { this._onClockSelected(e) });
         }
         _timeChanged(time) {
           if (!time) {
@@ -522,9 +522,9 @@ If you include this element as part of `paper-dialog`, use the class
           to.setClockHand(fromAngle, false);
           from.setClockHand(toAngle);
 
-          this.async(function () {
+          Polymer.Async.microTask.run(function () {
             to.setClockHand(toAngle, true, function () {
-              this.async(function () {
+              Polymer.Async.microTask.run(function () {
                 from.setClockHand(fromAngle, false);
               }, 200);
             }.bind(this));
@@ -534,7 +534,7 @@ If you include this element as part of `paper-dialog`, use the class
           if (this.view === 'hours') {
 
             var showMinutes = function () {
-              this.async(function () {
+              Polymer.Async.microTask.run(function () {
                 this._selecting = true;
                 this.view = 'minutes';
                 this._selecting = false;
@@ -557,7 +557,7 @@ If you include this element as part of `paper-dialog`, use the class
           } else if (this.view === 'minutes' && this.enableSeconds) {
 
             var showSeconds = function () {
-              this.async(function () {
+              Polymer.Async.microTask.run(function () {
                 this._selecting = true;
                 this.view = 'seconds';
                 this._selecting = false;
@@ -584,7 +584,7 @@ If you include this element as part of `paper-dialog`, use the class
             return;
           }
           this.updateStyles();
-          this.async(function () {
+          Polymer.Async.microTask.run(function () {
             this._resizing = true;
             this.$.pages._notifyPageResize();
             this._resizing = false;
