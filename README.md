@@ -10,6 +10,7 @@ component aims to be a clone of the time picker introduced in Android Lollipop.
 See the [component page](http://bendavis78.github.io/paper-time-picker/) for
 full documentation.
 
+FORK CHANGES: applied polymer 2.0 branch
 ## Examples:
 
 Default picker:
