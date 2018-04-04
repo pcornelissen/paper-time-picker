@@ -1,6 +1,6 @@
 paper-time-picker
 ==========
-Material Design time picker, compatible with *Polymer 1.0*
+Material Design time picker, compatible with *Polymer 2.0*
 
 Provides a responsive time picker based on the material design spec. This
 component aims to be a clone of the time picker introduced in Android Lollipop.
